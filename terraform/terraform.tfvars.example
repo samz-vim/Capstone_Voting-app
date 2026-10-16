@@ -1,0 +1,14 @@
+aws_region   = "eu-west-1"
+project_name = "voting-app"
+
+# Replace these with your exact GitHub repository owner and repository name.
+github_owner = "YOUR_GITHUB_USERNAME_OR_ORG"
+github_repo  = "voting-app-ship-it"
+github_branch = "main"
+
+# Verify that this version is available in your selected region before apply.
+kubernetes_version = "1.32"
+node_instance_type = "t3.medium"
+node_desired_size  = 2
+node_min_size      = 2
+node_max_size      = 3

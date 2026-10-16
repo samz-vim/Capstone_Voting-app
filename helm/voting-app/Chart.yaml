@@ -1,0 +1,6 @@
+apiVersion: v2
+name: voting-app
+description: A colourful three-candidate voting demo for a DevOps capstone.
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

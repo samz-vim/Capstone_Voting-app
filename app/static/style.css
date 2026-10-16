@@ -1,0 +1,94 @@
+:root {
+  --ink: #f4f7f2; --muted: #9aada5; --green: #b6f36b; --deep: #071f1a;
+  --panel: #102d26; --panel-border: rgba(220,244,229,.12);
+  font-family: "DM Sans", sans-serif; color: var(--ink); background: var(--deep);
+}
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; overflow-x: hidden; background: radial-gradient(ellipse at 12% 4%, #174438 0, transparent 33%), radial-gradient(ellipse at 88% 30%, #1a3029 0, transparent 28%), #071f1a; }
+.ambient { position: fixed; border-radius: 50%; filter: blur(80px); opacity: .16; pointer-events: none; z-index: 0; }
+.ambient-one { width: 280px; height: 280px; background: #b6f36b; top: 40%; left: -180px; }
+.ambient-two { width: 300px; height: 300px; background: #e4a05e; top: 60%; right: -200px; }
+.topbar, .page-shell { position: relative; z-index: 1; }
+.topbar { display: flex; align-items: center; justify-content: space-between; max-width: 1180px; margin: auto; padding: 24px 28px; border-bottom: 1px solid rgba(255,255,255,.08); }
+.brand { display: flex; align-items: center; gap: 11px; text-decoration: none; color: var(--ink); font: 800 18px Manrope, sans-serif; letter-spacing: -.7px; }
+.brand-mark { display: grid; place-items: center; width: 37px; height: 37px; border-radius: 12px; color: #10271b; background: var(--green); font-size: 12px; letter-spacing: -.3px; }
+.brand-light { color: var(--green); }
+.demo-pill, .live-badge { display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(182,243,107,.28); color: var(--green); border-radius: 99px; padding: 8px 12px; font-size: 10px; font-weight: 800; letter-spacing: 1.4px; }
+.live-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 12px #b6f36b; flex: 0 0 auto; }
+.page-shell { max-width: 1180px; padding: 0 28px; margin: auto; }
+.hero { display: grid; grid-template-columns: 1.5fr .8fr; gap: 60px; align-items: center; padding: 78px 0 70px; }
+.eyebrow { display: flex; align-items: center; gap: 10px; color: var(--green); font-size: 10px; font-weight: 800; letter-spacing: 2px; margin: 0 0 16px; }
+.eyebrow-line { width: 24px; height: 1px; background: var(--green); }
+h1, h2, h3, p { margin-top: 0; }
+h1, h2, h3 { font-family: Manrope, sans-serif; }
+h1 { font-size: clamp(48px, 6vw, 76px); line-height: 1.02; letter-spacing: -4px; margin-bottom: 22px; }
+h1 span { color: var(--green); }
+.hero-text { max-width: 510px; color: #b3c2bb; font-size: 16px; line-height: 1.8; }
+.hero-note { display: flex; gap: 10px; max-width: 510px; color: #a9b8b0; background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 13px 15px; margin-top: 27px; font-size: 11px; line-height: 1.6; }
+.hero-note strong { color: #f1f6f0; }
+.note-icon { color: var(--green); font-size: 16px; }
+.hero-stat { position: relative; min-height: 300px; padding: 29px; border: 1px solid var(--panel-border); border-radius: 24px; background: linear-gradient(145deg, rgba(27,65,52,.95), rgba(12,39,32,.8)); overflow: hidden; }
+.hero-stat:after { content: ""; position: absolute; width: 190px; height: 190px; right: -85px; bottom: -100px; border: 1px solid rgba(182,243,107,.15); border-radius: 50%; box-shadow: 0 0 0 25px rgba(182,243,107,.025), 0 0 0 50px rgba(182,243,107,.02); }
+.stat-orbit { height: 52px; display: flex; align-items: center; }
+.orbit-ring { width: 43px; height: 43px; border: 1px solid rgba(182,243,107,.5); border-radius: 50%; position: absolute; }
+.stat-icon { position: relative; margin-left: 14px; color: var(--green); font-size: 22px; }
+.stat-label { margin: 19px 0 6px; color: #a9c1b4; font-size: 9px; font-weight: 800; letter-spacing: 1.7px; }
+.stat-number { font: 800 55px Manrope, sans-serif; letter-spacing: -3px; }
+.stat-caption { color: #a9b8b0; font-size: 12px; margin: 0; }
+.stat-divider { height: 1px; background: rgba(255,255,255,.1); margin: 22px 0 15px; }
+.stat-footer { display: flex; align-items: center; gap: 9px; color: #bdc9c2; font-size: 10px; }
+.section-heading, .results-heading { display: flex; justify-content: space-between; align-items: end; gap: 20px; }
+.section-heading { margin-bottom: 22px; }
+.section-heading .eyebrow, .results-heading .eyebrow { margin-bottom: 9px; }
+h2 { font-size: clamp(25px, 3vw, 34px); letter-spacing: -1.3px; margin-bottom: 0; }
+.select-label { color: #9cafa5; font-size: 9px; font-weight: 800; letter-spacing: 1.5px; padding-bottom: 6px; }
+.select-label span { color: var(--green); font-size: 16px; margin-left: 8px; }
+.candidate-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.candidate-card { border: 1px solid var(--panel-border); border-radius: 20px; padding: 20px; background: linear-gradient(155deg, rgba(20,53,43,.98), rgba(12,37,31,.98)); transition: transform .2s, border-color .2s; min-width: 0; }
+.candidate-card:hover { transform: translateY(-4px); border-color: rgba(182,243,107,.4); }
+.card-top { display: flex; justify-content: space-between; align-items: center; }
+.candidate-index, .candidate-tag { font-size: 9px; letter-spacing: 1.3px; font-weight: 800; color: #9aafa4; }
+.candidate-symbol { color: var(--green); font-size: 20px; }
+.portrait { width: 88px; height: 88px; border-radius: 27px; margin: 25px 0 22px; display: grid; place-items: center; position: relative; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255,255,255,.22); }
+.portrait span { position: relative; z-index: 1; font: 800 24px Manrope, sans-serif; letter-spacing: -1px; }
+.portrait-glow { position: absolute; width: 85px; height: 85px; right: -33px; bottom: -38px; border: 1px solid rgba(255,255,255,.35); border-radius: 50%; box-shadow: 0 0 0 12px rgba(255,255,255,.08), 0 0 0 25px rgba(255,255,255,.05); }
+.portrait-gold { color: #3b2b12; background: linear-gradient(135deg, #f7d58c, #c78b37); }
+.portrait-green { color: #09281e; background: linear-gradient(135deg, #c5f38b, #5bba79); }
+.portrait-copper { color: #371b13; background: linear-gradient(135deg, #ffc19b, #c76e47); }
+.candidate-tag { margin-bottom: 8px; color: var(--green); }
+.candidate-info h3 { font-size: 23px; line-height: 1.2; letter-spacing: -.8px; min-height: 55px; margin-bottom: 10px; }
+.candidate-description { color: #a6b7ae; font-size: 11px; line-height: 1.65; min-height: 36px; margin-bottom: 22px; }
+.candidate-result { padding-top: 16px; border-top: 1px solid rgba(255,255,255,.1); }
+.result-line { display: flex; justify-content: space-between; color: #a9b9b0; font-size: 10px; margin-bottom: 10px; }
+.result-line strong { color: var(--ink); font-size: 12px; }
+.progress-track { height: 6px; background: rgba(255,255,255,.09); border-radius: 9px; overflow: hidden; }
+.progress-fill { height: 100%; width: 0; background: var(--green); border-radius: 9px; transition: width .5s ease; }
+.card-obi .progress-fill { background: #78d8a0; }
+.card-atiku .progress-fill { background: #e7a477; }
+.candidate-result p { color: #95a99f; font-size: 10px; margin: 10px 0 0; }
+.candidate-result p strong { color: #edf5ef; }
+.vote-button { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-top: 21px; border: 0; border-radius: 11px; padding: 14px 15px; background: var(--green); color: #10251b; font: 800 12px "DM Sans", sans-serif; cursor: pointer; transition: background .2s, transform .2s; }
+.vote-button:hover { background: #d0ffa0; transform: translateY(-1px); }
+.vote-button:disabled { opacity: .6; cursor: wait; }
+.vote-button span { font-size: 17px; }
+.results-panel { margin-top: 30px; padding: 30px; border-radius: 20px; border: 1px solid var(--panel-border); background: rgba(12,39,32,.8); }
+.results-heading { align-items: center; margin-bottom: 20px; }
+.live-badge { font-size: 9px; padding: 8px 10px; }
+.leader-summary { border-radius: 10px; background: rgba(182,243,107,.08); color: #c7d8cc; border: 1px solid rgba(182,243,107,.13); padding: 13px 15px; font-size: 12px; margin-bottom: 22px; }
+.results-list { display: grid; gap: 18px; }
+.overall-row { display: grid; grid-template-columns: 155px 1fr 80px; align-items: center; gap: 16px; }
+.overall-name { font-size: 12px; font-weight: 700; }
+.overall-track { height: 9px; background: rgba(255,255,255,.08); border-radius: 9px; overflow: hidden; }
+.overall-fill { height: 100%; background: linear-gradient(90deg, #82ce82, #c8f58b); border-radius: 9px; transition: width .5s ease; }
+.overall-value { text-align: right; color: #c8d6cd; font-size: 11px; }
+.results-bottom { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,.09); padding-top: 20px; margin-top: 23px; color: #8ea398; font-size: 10px; }
+.results-bottom strong { color: #c3d0c8; font-weight: 500; }
+.refresh-button { border: 1px solid rgba(255,255,255,.15); border-radius: 8px; color: #e5eee7; background: rgba(255,255,255,.04); padding: 9px 12px; cursor: pointer; font: 600 10px "DM Sans", sans-serif; }
+.refresh-button:hover { border-color: var(--green); }
+.toast { min-height: 18px; text-align: center; color: var(--green); font-size: 12px; padding-top: 14px; }
+footer { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between; border-top: 1px solid rgba(255,255,255,.08); padding: 25px 0 35px; margin-top: 25px; color: #82988d; font-size: 10px; }
+.footer-brand { color: #e7f1e9; font: 800 13px Manrope, sans-serif; }
+.footer-brand span { color: var(--green); }
+.footer-disclaimer { flex-basis: 100%; color: #657e71; }
+@media (max-width: 850px) { .hero { gap: 25px; grid-template-columns: 1.1fr .9fr; padding: 55px 0; } .candidate-grid { gap: 12px; } .candidate-card { padding: 16px; } .candidate-info h3 { font-size: 20px; } }
+@media (max-width: 650px) { .topbar { padding: 17px 18px; } .page-shell { padding: 0 18px; } .hero { grid-template-columns: 1fr; gap: 25px; padding: 46px 0; } h1 { letter-spacing: -2.5px; } .hero-stat { min-height: 260px; } .candidate-grid { grid-template-columns: 1fr; } .candidate-card { padding: 22px; } .portrait { margin-top: 18px; } .candidate-info h3, .candidate-description { min-height: 0; } .section-heading { align-items: start; flex-direction: column; } .results-panel { padding: 20px 16px; } .overall-row { grid-template-columns: 105px 1fr 56px; gap: 9px; } .overall-name { font-size: 10px; } .results-heading { align-items: start; flex-direction: column; } footer { flex-direction: column; align-items: start; } }

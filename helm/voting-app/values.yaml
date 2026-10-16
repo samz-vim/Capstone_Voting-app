@@ -1,0 +1,34 @@
+replicaCount: 2
+
+image:
+  repository: REPLACE_WITH_ECR_REPOSITORY_URL
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 5000
+
+database:
+  # For the first capstone deployment, use an external managed database or
+  # configure a proper PostgreSQL chart and Kubernetes Secret before production.
+  # This demo chart defaults to an in-cluster PostgreSQL service.
+  host: voting-postgres
+  name: voting
+  user: voting
+  password: "CHANGE_ME_BEFORE_DEPLOYMENT"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
