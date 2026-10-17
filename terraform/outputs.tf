@@ -1,19 +1,19 @@
-output "aws_region" {
-  value = var.aws_region
+output "instance_id" {
+  description = "ID of the NationalVote EC2 instance"
+  value       = aws_instance.app.id
 }
 
-output "ecr_repository_url" {
-  value = aws_ecr_repository.app.repository_url
+output "public_ip" {
+  description = "Public IP address of the EC2 instance"
+  value       = aws_instance.app.public_ip
 }
 
-output "eks_cluster_name" {
-  value = module.eks.cluster_name
+output "application_url" {
+  description = "Initial application URL"
+  value       = "http://${aws_instance.app.public_ip}:5000"
 }
 
-output "github_actions_role_arn" {
-  value = aws_iam_role.github_actions.arn
-}
-
-output "configure_kubectl_command" {
-  value = "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_name}"
+output "security_group_id" {
+  description = "Security group attached to the instance"
+  value       = aws_security_group.app.id
 }
