@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071f1a">
+  <title>Capstone project | Voting App</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../static/style.css">
+  <script src="../static/app.js" defer></script>
+</head>
+<body>
+  <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+  <nav class="topbar">
+    <a class="brand" href="/" aria-label="National Vote home">
+      <span class="brand-mark">NV</span><span>National<span class="brand-light">Vote</span></span>
+    </a>
+    <span class="demo-pill"><span class="live-dot"></span> LIVE DEMO</span>
+  </nav>
+
+  <main class="page-shell">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="eyebrow-line"></span> YOUR VOICE. YOUR CHOICE.</p>
+        <h1>Every vote<br>tells a <span>story.</span></h1>
+        <p class="hero-text">Explore a modern digital voting experience. Select a candidate below and watch the demo results update live.</p>
+        <div class="hero-note"><span class="note-icon">ⓘ</span><span><strong>Demo project only.</strong> This is not an official election platform and votes have no electoral significance.</span></div>
+      </div>
+      <div class="hero-stat">
+        <div class="stat-orbit"><span class="orbit-ring"></span><span class="stat-icon">✳</span></div>
+        <p class="stat-label">COMMUNITY PARTICIPATION</p>
+        <div class="stat-number" id="hero-total">0</div>
+        <p class="stat-caption">demo votes submitted</p>
+        <div class="stat-divider"></div>
+        <div class="stat-footer"><span class="live-dot"></span> Results refresh automatically</div>
+      </div>
+    </section>
+
+    <section class="section-heading">
+      <div><p class="eyebrow">THE CANDIDATES</p><h2>Who gets your vote?</h2></div>
+      <span class="select-label">SELECT ONE TO VOTE <span>↘</span></span>
+    </section>
+
+    <section class="candidate-grid" aria-label="Candidates">
+      <article class="candidate-card card-tinubu">
+        <div class="card-top"><span class="candidate-index">01 / CANDIDATE</span><span class="candidate-symbol">✦</span></div>
+        <div class="portrait portrait-gold"><span>BT</span><i class="portrait-glow"></i></div>
+        <div class="candidate-info"><p class="candidate-tag">CANDIDATE 01</p><h3>Bola Ahmed<br> Tinubu</h3><p class="candidate-description">Cast a demo vote for Bola Ahmed Tinubu.</p></div>
+        <div class="candidate-result"><div class="result-line"><span>Current share</span><strong id="tinubu-percent">0%</strong></div><div class="progress-track"><div id="tinubu-bar" class="progress-fill"></div></div><p><strong id="tinubu-votes">0</strong> votes recorded</p></div>
+        <button class="vote-button" data-candidate="tinubu">Vote for Tinubu <span>↗</span></button>
+      </article>
+
+      <article class="candidate-card card-obi">
+        <div class="card-top"><span class="candidate-index">02 / CANDIDATE</span><span class="candidate-symbol">✦</span></div>
+        <div class="portrait portrait-green"><span>PO</span><i class="portrait-glow"></i></div>
+        <div class="candidate-info"><p class="candidate-tag">CANDIDATE 02</p><h3>Peter Obi</h3><p class="candidate-description">Cast a demo vote for Peter Obi.</p></div>
+        <div class="candidate-result"><div class="result-line"><span>Current share</span><strong id="obi-percent">0%</strong></div><div class="progress-track"><div id="obi-bar" class="progress-fill"></div></div><p><strong id="obi-votes">0</strong> votes recorded</p></div>
+        <button class="vote-button" data-candidate="obi">Vote for Obi <span>↗</span></button>
+      </article>
+
+      <article class="candidate-card card-atiku">
+        <div class="card-top"><span class="candidate-index">03 / CANDIDATE</span><span class="candidate-symbol">✦</span></div>
+        <div class="portrait portrait-copper"><span>AA</span><i class="portrait-glow"></i></div>
+        <div class="candidate-info"><p class="candidate-tag">CANDIDATE 03</p><h3>Atiku<br>Abubakar</h3><p class="candidate-description">Cast a demo vote for Atiku Abubakar.</p></div>
+        <div class="candidate-result"><div class="result-line"><span>Current share</span><strong id="atiku-percent">0%</strong></div><div class="progress-track"><div id="atiku-bar" class="progress-fill"></div></div><p><strong id="atiku-votes">0</strong> votes recorded</p></div>
+        <button class="vote-button" data-candidate="atiku">Vote for Atiku <span>↗</span></button>
+      </article>
+    </section>
+
+    <section class="results-panel">
+      <div class="results-heading"><div><p class="eyebrow">THE LIVE COUNT</p><h2>Demo results</h2></div><span class="live-badge"><span class="live-dot"></span> LIVE UPDATES</span></div>
+      <div id="leader-summary" class="leader-summary">Waiting for the first demo vote…</div>
+      <div id="results-list" class="results-list" aria-live="polite"></div>
+      <div class="results-bottom"><span>Last refreshed <strong id="last-updated">just now</strong></span><button id="refresh-button" class="refresh-button">↻ Refresh now</button></div>
+    </section>
+    <div id="message" class="toast" role="status" aria-live="polite"></div>
+    <footer><span class="footer-brand">NationalVote<span>.</span></span><span>Built as a DevOps capstone · Flask · PostgreSQL · Docker · Kubernetes</span><span class="footer-disclaimer">Independent educational demo — not affiliated with any candidate or election authority.</span></footer>
+  </main>
+</body>
+</html>
