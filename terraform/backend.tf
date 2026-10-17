@@ -1,8 +1,8 @@
 terraform {
   backend "s3" {
-    bucket       = "REPLACE-WITH-YOUR-UNIQUE-STATE-BUCKET"
+    bucket       = "capstone-project-voting-app"
     key          = "nationalvote/terraform.tfstate"
-    region       = "eu-west-1"
+    region       = "eu-north-1"
     encrypt      = true
     use_lockfile = true
   }
