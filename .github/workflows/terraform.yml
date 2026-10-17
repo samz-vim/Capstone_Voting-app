@@ -60,10 +60,10 @@ jobs:
         run: |
           INSTANCE_IP=$(terraform output -raw instance_public_ip)
       
-          echo "================================="
+          echo "================================"
           echo "Terraform EC2 IP:"
           echo "$INSTANCE_IP"
-          echo "================================="
+          echo "================================"
       
           echo "instance_ip=$INSTANCE_IP" >> "$GITHUB_OUTPUT"
 
