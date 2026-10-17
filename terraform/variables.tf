@@ -1,54 +1,50 @@
 variable "aws_region" {
-  description = "AWS region for the demo infrastructure."
+  description = "AWS region for NationalVote infrastructure"
   type        = string
   default     = "eu-west-1"
 }
 
 variable "project_name" {
-  description = "Short project prefix used in AWS resource names."
+  description = "Name prefix for NationalVote resources"
   type        = string
-  default     = "voting-app"
+  default     = "nationalvote"
 }
 
-variable "github_owner" {
-  description = "GitHub username or organization that owns the repository."
+variable "vpc_cidr" {
+  description = "CIDR block for the EKS VPC"
   type        = string
+  default     = "10.0.0.0/16"
 }
 
-variable "github_repo" {
-  description = "Repository name, without owner."
-  type        = string
+variable "node_instance_types" {
+  description = "EC2 instance types for EKS worker nodes"
+  type        = list(string)
+  default     = ["t3.medium"]
 }
 
-variable "github_branch" {
-  description = "Branch allowed to assume the GitHub Actions role."
-  type        = string
-  default     = "main"
+variable "desired_node_count" {
+  description = "Desired number of EKS worker nodes"
+  type        = number
+  default     = 2
 }
 
-variable "kubernetes_version" {
-  description = "EKS Kubernetes version supported in the selected AWS region."
-  type        = string
-  default     = "1.32"
+variable "min_node_count" {
+  description = "Minimum number of EKS worker nodes"
+  type        = number
+  default     = 1
 }
 
-variable "node_instance_type" {
-  description = "EC2 instance type for the EKS managed node group."
-  type        = string
-  default     = "t3.medium"
+variable "max_node_count" {
+  description = "Maximum number of EKS worker nodes"
+  type        = number
+  default     = 3
 }
 
-variable "node_desired_size" {
-  type    = number
-  default = 2
-}
+variable "cluster_endpoint_public_access_cidrs" {
+  description = "CIDR ranges allowed to reach the EKS public API endpoint"
+  type        = list(string)
 
-variable "node_min_size" {
-  type    = number
-  default = 2
-}
-
-variable "node_max_size" {
-  type    = number
-  default = 3
+  # Suitable for initial connectivity testing only.
+  # Restrict this to trusted addresses for a production deployment.
+  default = ["0.0.0.0/0"]
 }
