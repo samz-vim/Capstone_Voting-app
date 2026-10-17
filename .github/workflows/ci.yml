@@ -1,13 +1,14 @@
-name: Voting App CI
+name: CI
 
 on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main, develop]
-
+  repository_dispatch:
+    types: [terraform-complete]
+  workflow_run:
+    workflows: ["TF"]
+    types:
+      - completed
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   test-and-build:
