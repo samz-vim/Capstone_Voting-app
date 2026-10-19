@@ -39,10 +39,12 @@ jobs:
       - name: Check AWS identity and S3 access
         run: |
           aws sts get-caller-identity
+
           aws s3api get-bucket-location \
             --bucket capstone-project-voting
+          
           aws s3api list-objects-v2 \
-            --bucket capstone-project-voting\
+            --bucket capstone-project-voting \
             --prefix nationalvote/
 
       - name: Terraform Init
