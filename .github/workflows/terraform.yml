@@ -35,6 +35,15 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
+          
+      - name: Check AWS identity and S3 access
+        run: |
+          aws sts get-caller-identity
+          aws s3api get-bucket-location \
+            --bucket capstone-project-voting-app
+          aws s3api list-objects-v2 \
+            --bucket capstone-project-voting-app \
+            --prefix nationalvote/
 
       - name: Terraform Init
         working-directory: ./terraform
