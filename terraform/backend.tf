@@ -4,6 +4,5 @@ terraform {
     key          = "nationalvote/terraform.tfstate"
     region       = "eu-north-1"
     encrypt      = true
-    use_lockfile = true
   }
 }
