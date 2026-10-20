@@ -1,6 +1,5 @@
 name: CD
 
-
 on:
   repository_dispatch:
     types: [terraform-complete]
@@ -13,17 +12,14 @@ permissions:
   contents: read
 
 jobs:
-  terraform:
-    name: Provision Infrastructure
+  build-and-deploy:
+    name: Build and Deploy NationalVote
     runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        working-directory: terraform
 
     env:
       AWS_REGION: us-east-1
       AWS_PAGER: ""
+      IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPOSITORY }}
 
     steps:
       - name: Checkout repository
@@ -36,38 +32,85 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-
-      - name: Terraform Format Check
-        run: terraform fmt -check -recursive
-
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Terraform Validate
-        run: terraform validate
-
-      - name: Terraform Plan
-        run: terraform plan -input=false
-
-      - name: Terraform Apply
-        if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
-        run: terraform apply -auto-approve -input=false
-
-      - name: Get EC2 connection details
-        if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+      - name: Get EC2 public IP
         id: ec2
         shell: bash
+        env:
+          INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
         run: |
-          INSTANCE_ID=$(terraform output -raw instance_id)
-          PUBLIC_IP=$(terraform output -raw instance_public_ip)
-
-          if [ -z "$INSTANCE_ID" ] || [ -z "$PUBLIC_IP" ] || [ "$PUBLIC_IP" = "None" ]; then
-            echo "EC2 instance ID or public IP is missing."
+          if [ -z "$INSTANCE_ID" ]; then
+            echo "EC2_INSTANCE_ID secret is missing."
             exit 1
           fi
 
-          echo "instance_id=$INSTANCE_ID" >> "$GITHUB_OUTPUT"
-          echo "host=$PUBLIC_IP" >> "$GITHUB_OUTPUT"
-          echo "EC2 connection details retrieved."
+          IP=$(aws ec2 describe-instances \
+            --instance-ids "$INSTANCE_ID" \
+            --query 'Reservations[0].Instances[0].PublicIpAddress' \
+            --output text)
+
+          if [ -z "$IP" ] || [ "$IP" = "None" ]; then
+            echo "No public IP found. Check the EC2 instance and region."
+            exit 1
+          fi
+
+          echo "host=$IP" >> "$GITHUB_OUTPUT"
+          echo "EC2 address discovered successfully."
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+      - name: Copy Kubernetes manifests to EC2
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ steps.ec2.outputs.host }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "k8s/"
+          target: "/home/ubuntu/nationalvote-deploy/"
+          overwrite: true
+
+      - name: Deploy application through SSH
+        uses: appleboy/ssh-action@v1
+        env:
+          IMAGE: ${{ env.IMAGE_NAME }}:${{ github.sha }}
+        with:
+          host: ${{ steps.ec2.outputs.host }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: IMAGE
+          script: |
+            set -e
+
+            echo "Checking Kubernetes cluster..."
+            sudo kubectl get nodes
+
+            echo "Applying NationalVote manifests..."
+            sudo kubectl apply -f /home/ubuntu/nationalvote-deploy/k8s/
+
+            echo "Updating application image..."
+            sudo kubectl set image deployment/nationalvote \
+              nationalvote="$IMAGE" \
+              -n devops-project
+
+            echo "Waiting for rollout..."
+            sudo kubectl rollout status deployment/nationalvote \
+              -n devops-project --timeout=180s
+
+            echo "Checking application resources..."
+            sudo kubectl get pods -n devops-project
+            sudo kubectl get services -n devops-project
