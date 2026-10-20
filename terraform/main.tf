@@ -1,19 +1,3 @@
-
-terraform {
-  required_version = ">= 1.6.0"
-
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 6.0"
-    }
-  }
-}
-
-provider "aws" {
-  region = var.aws_region
-}
-
 resource "aws_security_group" "nationalvote" {
   name        = "nationalvote-k8s-sg"
   description = "Access for NationalVote Kubernetes"
