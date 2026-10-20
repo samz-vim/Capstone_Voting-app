@@ -2,13 +2,14 @@
 name: CD
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
-
+  repository_dispatch:
+    types: [terraform-complete]
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-and-deploy:
@@ -36,24 +37,23 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPOSITORY }}:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPOSITORY }}:sha-${{ github.sha }}
 
+    
       - name: Copy Kubernetes manifests to EC2
         uses: appleboy/scp-action@v1
         with:
-          host: ${{ secrets.EC2_HOST }}
+          host: ${{ steps.ec2.outputs.host }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "k8s/"
           target: "/home/ubuntu/nationalvote-deploy/"
-
-      - name: Deploy to Kubernetes over SSH
+      
+      - name: Deploy to EC2
         uses: appleboy/ssh-action@v1
-        env:
-          IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPOSITORY }}:sha-${{ github.sha }}
         with:
-          host: ${{ secrets.EC2_HOST }}
+          host: ${{ steps.ec2.outputs.host }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: IMAGE
+
           script: |
             set -eu
 
