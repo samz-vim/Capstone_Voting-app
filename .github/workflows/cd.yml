@@ -38,6 +38,7 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPOSITORY }}:sha-${{ github.sha }}
 
     
+     
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -45,6 +46,32 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
       
+      - name: Find EC2 public IP
+        id: ec2
+        shell: bash
+        env:
+          INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
+          AWS_PAGER: ""
+        run: |
+          if [ -z "$INSTANCE_ID" ]; then
+            echo "EC2_INSTANCE_ID secret is missing"
+            exit 1
+          fi
+      
+          IP=$(aws ec2 describe-instances \
+            --instance-ids "$INSTANCE_ID" \
+            --query 'Reservations[0].Instances[0].PublicIpAddress' \
+            --output text)
+      
+          if [ -z "$IP" ] || [ "$IP" = "None" ]; then
+            echo "No public IP found for this EC2 instance"
+            exit 1
+          fi
+      
+          echo "host=$IP" >> "$GITHUB_OUTPUT"
+          echo "EC2 public IP retrieved successfully"
+      
+            
       - name: Get EC2 public IP
         id: ec2
         shell: bash
