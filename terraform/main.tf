@@ -54,3 +54,18 @@ resource "aws_instance" "nationalvote" {
     Project = "NationalVote"
   }
 }
+
+
+resource "aws_eip" "nationalvote" {
+  domain = "vpc"
+
+  tags = {
+    Name = "nationalvote-elastic-ip"
+  }
+}
+
+resource "aws_eip_association" "nationalvote" {
+  instance_id   = aws_instance.nationalvote.id
+  allocation_id = aws_eip.nationalvote.id
+}
+
