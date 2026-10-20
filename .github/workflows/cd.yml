@@ -1,5 +1,5 @@
 
-name: NationalVote CI-CD
+name: CD
 
 on:
   push:
