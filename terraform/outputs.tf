@@ -8,6 +8,12 @@ output "instance_public_ip" {
   value       = aws_instance.nationalvote.public_ip
 }
 
+
+output "elastic_ip" {
+  description = "Static public IP for NationalVote EC2"
+  value       = aws_eip.nationalvote.public_ip
+}
+
 output "ssh_command" {
   value = "ssh -i your-key.pem ubuntu@${aws_instance.nationalvote.public_ip}"
 }
