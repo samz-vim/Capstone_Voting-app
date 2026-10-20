@@ -1,57 +1,43 @@
+
 variable "aws_region" {
-  description = "AWS region for NationalVote infrastructure"
-  type        = string
-  default     = "eu-west-1"
-}
-
-
-variable "availability_zone" {
-  description = "AWS Availability Zone for the public subnets"
+  description = "AWS region"
   type        = string
   default     = "eu-north-1"
 }
 
-variable "project_name" {
-  description = "Name prefix for NationalVote resources"
+variable "vpc_id" {
+  description = "VPC ID for the EC2 instance"
   type        = string
-  default     = "nationalvote"
 }
 
-variable "vpc_cidr" {
-  description = "CIDR block for the EKS VPC"
+variable "subnet_id" {
+  description = "Public subnet ID with internet access"
   type        = string
-  default     = "10.0.0.0/16"
 }
 
-variable "node_instance_types" {
-  description = "EC2 instance types for EKS worker nodes"
-  type        = list(string)
-  default     = ["t3.medium"]
+variable "ubuntu_ami_id" {
+  description = "Ubuntu Server 24.04 LTS AMI ID for your region"
+  type        = string
 }
 
-variable "desired_node_count" {
-  description = "Desired number of EKS worker nodes"
-  type        = number
-  default     = 2
+variable "instance_type" {
+  description = "EC2 instance size"
+  type        = string
+  default     = "t3.xlarge"
 }
 
-variable "min_node_count" {
-  description = "Minimum number of EKS worker nodes"
-  type        = number
-  default     = 1
+variable "key_name" {
+  description = "Existing AWS EC2 key pair name"
+  type        = string
 }
 
-variable "max_node_count" {
-  description = "Maximum number of EKS worker nodes"
-  type        = number
-  default     = 3
+variable "ssh_allowed_cidr" {
+  description = "Your public IP address followed by /32"
+  type        = string
 }
 
-variable "cluster_endpoint_public_access_cidrs" {
-  description = "CIDR ranges allowed to reach the EKS public API endpoint"
-  type        = list(string)
-
-  # Suitable for initial connectivity testing only.
-  # Restrict this to trusted addresses for a production deployment.
-  default = ["0.0.0.0/0"]
+variable "app_allowed_cidr" {
+  description = "IP range allowed to access the application"
+  type        = string
+  default     = "0.0.0.0/0"
 }
