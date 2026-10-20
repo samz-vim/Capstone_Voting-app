@@ -4,6 +4,13 @@ variable "aws_region" {
   default     = "eu-west-1"
 }
 
+
+variable "availability_zone" {
+  description = "AWS Availability Zone for the public subnets"
+  type        = string
+  default     = "eu-north-1"
+}
+
 variable "project_name" {
   description = "Name prefix for NationalVote resources"
   type        = string
