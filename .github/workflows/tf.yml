@@ -12,115 +12,63 @@ on:
 permissions:
   contents: write
 
+
 jobs:
   terraform:
-    name: Terraform Infrastructure
+    name: Provision Infrastructure
     runs-on: ubuntu-latest
 
     defaults:
       run:
         working-directory: terraform
 
-    steps:
+    env:
+      AWS_REGION: eu-north-1
+      AWS_PAGER: ""
 
+    steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-
-    
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-      
-      - name: Find EC2 public IP
-        id: ec2
-        shell: bash
-        env:
-          INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
-          AWS_PAGER: ""
-        run: |
-          if [ -z "$INSTANCE_ID" ]; then
-            echo "EC2_INSTANCE_ID secret is missing"
-            exit 1
-          fi
-      
-          IP=$(aws ec2 describe-instances \
-            --instance-ids "$INSTANCE_ID" \
-            --query 'Reservations[0].Instances[0].PublicIpAddress' \
-            --output text)
-      
-          if [ -z "$IP" ] || [ "$IP" = "None" ]; then
-            echo "No public IP found for this EC2 instance"
-            exit 1
-          fi
-      
-          echo "host=$IP" >> "$GITHUB_OUTPUT"
-          echo "EC2 public IP retrieved successfully"
+          aws-region: ${{ env.AWS_REGION }}
 
-          
-      - name: Check AWS identity and S3 access
-        run: |
-          aws sts get-caller-identity
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
 
-          aws s3api get-bucket-location \
-            --bucket capstone-project-voting
-          
-          aws s3api list-objects-v2 \
-            --bucket capstone-project-voting \
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
 
       - name: Terraform Init
-        working-directory: ./terraform
         run: terraform init
 
       - name: Terraform Validate
-        run: terraform validate 
-    
-      - name: Check AWS connection
-        run: aws sts get-caller-identity
+        run: terraform validate
 
       - name: Terraform Plan
         run: terraform plan -input=false
 
       - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform apply -auto-approve
+        if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve -input=false
 
-      - name: Get EC2 Elastic IP from Terraform
+      - name: Get EC2 connection details
+        if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
         id: ec2
-        working-directory: ./terraform
         shell: bash
         run: |
-          IP=$(terraform output -raw elastic_ip)
-          echo "host=$IP" >> "$GITHUB_OUTPUT"
-          
-      - name: Get and Debug EC2 IP
-        id: tf_output
-        run: |
-          INSTANCE_IP=$(terraform output -raw instance_public_ip)
-      
-          echo "==============================="
-          echo "Terraform EC2 IP:"
-          echo "$INSTANCE_IP"
-          echo "==============================="
-      
-          echo "instance_ip=$INSTANCE_IP" >> "$GITHUB_OUTPUT"
+          INSTANCE_ID=$(terraform output -raw instance_id)
+          PUBLIC_IP=$(terraform output -raw instance_public_ip)
 
-      - name: Trigger CI
-        uses: peter-evans/repository-dispatch@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          event-type: terraform-complete
-          client-payload: '{"ec2_ip":"${{ steps.ec2.outputs.instance_ip }}"}'
-          
-      - name: Check EC2 IP
-        run: |
-         echo "EC2 IP: ${{ github.event.client_payload.ec2_ip }}"
+          if [ -z "$INSTANCE_ID" ] || [ -z "$PUBLIC_IP" ] || [ "$PUBLIC_IP" = "None" ]; then
+            echo "EC2 instance ID or public IP is missing."
+            exit 1
+          fi
 
-      - name: Terraform Output
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform output
+          echo "instance_id=$INSTANCE_ID" >> "$GITHUB_OUTPUT"
+          echo "host=$PUBLIC_IP" >> "$GITHUB_OUTPUT"
+          echo "EC2 connection details retrieved."
