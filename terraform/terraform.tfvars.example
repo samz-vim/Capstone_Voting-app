@@ -1,14 +1,16 @@
-aws_region   = "eu-west-1"
-project_name = "voting-app"
+aws_region       = "eu-north-1"
 
-# Replace these with your exact GitHub repository owner and repository name.
-github_owner = "YOUR_GITHUB_USERNAME_OR_ORG"
-github_repo  = "voting-app-ship-it"
-github_branch = "main"
+# Replace these example values with your real AWS resource IDs.
+vpc_id           = "vpc-REPLACE_ME"
+subnet_id        = "subnet-REPLACE_ME"
+ubuntu_ami_id    = "ami-REPLACE_ME"
+key_name         = "YOUR_EXISTING_KEY_PAIR_NAME"
 
-# Verify that this version is available in your selected region before apply.
-kubernetes_version = "1.32"
-node_instance_type = "t3.medium"
-node_desired_size  = 2
-node_min_size      = 2
-node_max_size      = 3
+# Replace with your public IPv4 address, ending in /32.
+ssh_allowed_cidr = "YOUR_PUBLIC_IP/32"
+
+# For testing, this allows the website to be accessed publicly.
+# Restrict this to your IP if public access is unnecessary.
+app_allowed_cidr = "0.0.0.0/0"
+
+instance_type    = "t3.xlarge"
