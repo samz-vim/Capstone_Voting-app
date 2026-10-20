@@ -51,16 +51,7 @@ jobs:
         run: terraform init
 
       - name: Terraform Validate
-        run: terraform validate
-
-            
-      - name: Get EC2 Elastic IP from Terraform
-        id: ec2
-        working-directory: ./terraform
-        shell: bash
-        run: |
-          IP=$(terraform output -raw elastic_ip)
-          echo "host=$IP" >> "$GITHUB_OUTPUT"
+        run: terraform validate 
     
       - name: Check AWS connection
         run: aws sts get-caller-identity
@@ -72,6 +63,14 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: terraform apply -auto-approve
 
+      - name: Get EC2 Elastic IP from Terraform
+        id: ec2
+        working-directory: ./terraform
+        shell: bash
+        run: |
+          IP=$(terraform output -raw elastic_ip)
+          echo "host=$IP" >> "$GITHUB_OUTPUT"
+          
       - name: Get and Debug EC2 IP
         id: tf_output
         run: |
