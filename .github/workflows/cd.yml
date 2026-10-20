@@ -38,21 +38,31 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPOSITORY }}:sha-${{ github.sha }}
 
     
-      - name: Copy Kubernetes manifests to EC2
-        uses: appleboy/scp-action@v1
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          host: ${{ steps.ec2.outputs.host }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "k8s/"
-          target: "/home/ubuntu/nationalvote-deploy/"
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
       
-      - name: Deploy to EC2
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ steps.ec2.outputs.host }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
+      - name: Get EC2 public IP
+        id: ec2
+        shell: bash
+        env:
+          AWS_PAGER: ""
+        run: |
+          IP=$(aws ec2 describe-instances \
+            --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
+            --query 'Reservations[0].Instances[0].PublicIpAddress' \
+            --output text)
+      
+          if [ -z "$IP" ] || [ "$IP" = "None" ]; then
+            echo "EC2 has no public IP, or the instance ID is incorrect."
+            exit 1
+          fi
+      
+          echo "host=$IP" >> "$GITHUB_OUTPUT"
+      
 
           script: |
             set -eu
