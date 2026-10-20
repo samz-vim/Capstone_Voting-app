@@ -45,7 +45,6 @@ jobs:
           
           aws s3api list-objects-v2 \
             --bucket capstone-project-voting \
-            --prefix nationalvote/
 
       - name: Terraform Init
         working-directory: ./terraform
