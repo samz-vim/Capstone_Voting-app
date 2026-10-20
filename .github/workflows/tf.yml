@@ -53,6 +53,15 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
+            
+      - name: Get EC2 Elastic IP from Terraform
+        id: ec2
+        working-directory: ./terraform
+        shell: bash
+        run: |
+          IP=$(terraform output -raw elastic_ip)
+          echo "host=$IP" >> "$GITHUB_OUTPUT"
+    
       - name: Check AWS connection
         run: aws sts get-caller-identity
 
