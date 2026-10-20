@@ -1,64 +1,77 @@
-name: Build, Push and Deploy
+
+name: NationalVote CI-CD
 
 on:
-  repository_dispatch:
-    types: [ci-complete]
-  workflow_run:
-    workflows: ["CI"]
-    types:
-      - completed
-permissions:
-  contents: write
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
-env:
-  AWS_REGION: ${{ vars.AWS_REGION }}
-  EKS_CLUSTER_NAME: ${{ vars.EKS_CLUSTER_NAME }}
-  ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+permissions:
+  contents: read
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.AWS_REGION }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Login to Amazon ECR
-        id: ecr
-        uses: aws-actions/amazon-ecr-login@v2
+      - name: Build and push NationalVote image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPOSITORY }}:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPOSITORY }}:sha-${{ github.sha }}
 
-      - name: Build and push image
+      - name: Copy Kubernetes manifests to EC2
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "k8s/"
+          target: "/home/ubuntu/nationalvote-deploy/"
+
+      - name: Deploy to Kubernetes over SSH
+        uses: appleboy/ssh-action@v1
         env:
-          REGISTRY: ${{ steps.ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          docker build --pull -t "$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" .
-          docker push "$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-          echo "IMAGE_URI=$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> "$GITHUB_ENV"
-
-      - name: Configure kubectl
-        run: aws eks update-kubeconfig --region "$AWS_REGION" --name "$EKS_CLUSTER_NAME"
-
-      - name: Set up Helm
-        uses: azure/setup-helm@v4
+          IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPOSITORY }}:sha-${{ github.sha }}
         with:
-          version: v3.16.4
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: IMAGE
+          script: |
+            set -eu
 
-      - name: Deploy with Helm
-        run: |
-          helm upgrade --install voting-app ./helm/voting-app \
-            --namespace voting-app --create-namespace \
-            --set image.repository="${IMAGE_URI%:*}" \
-            --set image.tag="${IMAGE_URI##*:}" \
-            --wait --timeout 5m
+            echo "Checking Kubernetes cluster..."
+            kubectl get nodes
 
-      - name: Verify rollout
-        run: |
-          kubectl rollout status deployment/voting-app -n voting-app --timeout=180s
-          kubectl get pods,svc -n voting-app
+            echo "Applying NationalVote manifests..."
+            kubectl apply -f /home/ubuntu/nationalvote-deploy/k8s/
+
+            echo "Updating NationalVote image..."
+            kubectl set image deployment/nationalvote \
+              nationalvote="$IMAGE" \
+              -n devops-project
+
+            echo "Waiting for deployment..."
+            kubectl rollout status deployment/nationalvote \
+              -n devops-project --timeout=300s
+
+            echo "Checking application pods..."
+            kubectl get pods -n devops-project
+            kubectl get svc -n devops-project
