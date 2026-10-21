@@ -117,16 +117,24 @@ jobs:
           target: "/home/ubuntu/nationalvote-deploy/"
           overwrite: true
 
-      - name: Deploy application through SSH
+      - name: Deploy to EC2
         uses: appleboy/ssh-action@v1
-        env:
-          IMAGE: ${{ env.IMAGE_NAME }}:${{ github.sha }}
         with:
-          host: ${{ steps.ec2.outputs.host }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          envs: IMAGE
-          
+            host: ${{ steps.ec2.outputs.host }}
+            username: ubuntu
+            key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+            script: |
+              set -eu
+  
+              echo "Checking Kubernetes bootstrap..."
+              if ! sudo test -f /var/lib/nationalvote-bootstrap-complete; then
+                echo "Kubernetes bootstrap is not complete."
+                exit 1
+              fi
+  
+              export KUBECONFIG=/home/ubuntu/.kube/config
+              kubectl get nodes
+            
       - name: Prepare and Verify Kubernetes
         uses: appleboy/ssh-action@v1
         with:
