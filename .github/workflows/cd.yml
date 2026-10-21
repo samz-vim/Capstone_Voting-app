@@ -32,29 +32,62 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Get EC2 public IP
+     
+     
+      - name: Discover Current EC2 Instance
         id: ec2
         shell: bash
         env:
-          INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
         run: |
-          if [ -z "$INSTANCE_ID" ]; then
-            echo "EC2_INSTANCE_ID secret is missing."
+          set -euo pipefail
+
+          if [[ -z "${AWS_REGION:-}" ]]; then
+            echo "::error::AWS_REGION secret is missing."
             exit 1
           fi
 
-          IP=$(aws ec2 describe-instances \
+          echo "Searching for the current NationalVote EC2 instance..."
+
+          INSTANCE_ID=$(aws ec2 describe-instances \
+            --region "$AWS_REGION" \
+            --filters \
+              "Name=tag:Project,Values=NationalVote" \
+              "Name=instance-state-name,Values=running" \
+            --query 'Reservations[].Instances[].InstanceId' \
+            --output text)
+
+          if [[ -z "$INSTANCE_ID" || "$INSTANCE_ID" == "None" ]]; then
+            echo "::error::No running NationalVote EC2 instance found."
+            echo "Run Terraform apply and check the EC2 tags and AWS region."
+            exit 1
+          fi
+
+          INSTANCE_COUNT=$(wc -w <<< "$INSTANCE_ID")
+
+          if [[ "$INSTANCE_COUNT" -ne 1 ]]; then
+            echo "::error::Found multiple running NationalVote instances. Expected exactly one."
+            exit 1
+          fi
+
+          PUBLIC_IP=$(aws ec2 describe-instances \
+            --region "$AWS_REGION" \
             --instance-ids "$INSTANCE_ID" \
             --query 'Reservations[0].Instances[0].PublicIpAddress' \
             --output text)
 
-          if [ -z "$IP" ] || [ "$IP" = "None" ]; then
-            echo "No public IP found. Check the EC2 instance and region."
+          if [[ -z "$PUBLIC_IP" || "$PUBLIC_IP" == "None" ]]; then
+            echo "::error::The current EC2 instance has no public IP."
             exit 1
           fi
 
-          echo "host=$IP" >> "$GITHUB_OUTPUT"
-          echo "EC2 address discovered successfully."
+          echo "instance_id=$INSTANCE_ID" >> "$GITHUB_OUTPUT"
+          echo "host=$PUBLIC_IP" >> "$GITHUB_OUTPUT"
+
+          echo "EC2 instance discovered successfully."
+          echo "Instance ID: $INSTANCE_ID"
+          echo "Public IP: $PUBLIC_IP"
+
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
