@@ -112,14 +112,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-      
-          echo "Checking Kubernetes manifest files..."
-      
+          pwd
+          ls -la
           ls -la kubernetes/
-      
-          test -f kubernetes/namespace.yaml
-          test -f kubernetes/deployment.yaml
-          test -f kubernetes/service.yaml
+          test -f k8s/namespace.yaml
+          test -f k8s/deployment.yaml
+          test -f k8s/service.yaml
       
           echo "All Kubernetes manifests exist."
       
