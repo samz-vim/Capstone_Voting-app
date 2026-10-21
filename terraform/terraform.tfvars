@@ -13,4 +13,4 @@ ssh_allowed_cidr = "102.89.22.12/32"
 # Restrict this to your IP if public access is unnecessary.
 app_allowed_cidr = "0.0.0.0/0"
 
-instance_type = "t3.micro"
+instance_type = "t3.small"
