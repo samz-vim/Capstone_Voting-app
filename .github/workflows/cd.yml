@@ -206,7 +206,7 @@ jobs:
 
             echo "Waiting for NationalVote bootstrap to finish..."
 
-            ATTEMPTS=50
+            ATTEMPTS=5
             COUNT=0
 
             while ! sudo test -f /var/lib/nationalvote-bootstrap-complete; do
