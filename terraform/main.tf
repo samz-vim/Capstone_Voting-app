@@ -4,11 +4,11 @@ resource "aws_security_group" "nationalvote" {
   vpc_id      = var.vpc_id
 
   ingress {
-    description = "SSH from your IP only"
+    description = "SSH"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [var.ssh_allowed_cidr]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
