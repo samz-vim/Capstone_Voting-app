@@ -25,12 +25,22 @@ apt-get install -y \
 swapoff -a
 sed -i '/[[:space:]]swap[[:space:]]/s/^[^#]/#&/' /etc/fstab
 
-# 2. Configure containerd to use systemd cgroups.
+# 2. Configure containerd.
 mkdir -p /etc/containerd
+
 containerd config default > /etc/containerd/config.toml
 
-sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' 
-  /etc/containerd/config.toml
+# Confirm the configuration file exists and is not empty.
+test -s /etc/containerd/config.toml
+
+# Enable systemd cgroups for Kubernetes.
+if grep -q 'SystemdCgroup = false' /etc/containerd/config.toml; then
+  sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' \
+    /etc/containerd/config.toml
+elif ! grep -q 'SystemdCgroup = true' /etc/containerd/config.toml; then
+  echo "ERROR: Could not find SystemdCgroup setting in containerd config"
+  exit 1
+fi
 
 systemctl enable containerd
 systemctl restart containerd
