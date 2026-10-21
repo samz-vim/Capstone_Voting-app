@@ -107,15 +107,33 @@ jobs:
             ${{ env.IMAGE_NAME }}:latest
             ${{ env.IMAGE_NAME }}:${{ github.sha }}
 
+      
+      - name: Verify Kubernetes manifests
+        shell: bash
+        run: |
+          set -euo pipefail
+      
+          echo "Checking Kubernetes manifest files..."
+      
+          ls -la kubernetes/
+      
+          test -f kubernetes/namespace.yaml
+          test -f kubernetes/deployment.yaml
+          test -f kubernetes/service.yaml
+      
+          echo "All Kubernetes manifests exist."
+      
       - name: Copy Kubernetes manifests to EC2
-        uses: appleboy/scp-action@v1
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ steps.ec2.outputs.host }}
           username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "k8s/"
-          target: "/home/ubuntu/nationalvote-deploy/"
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          source: "kubernetes/*.yaml"
+          target: "/home/ubuntu/nationalvote-kubernetes/"
+          strip_components: 1
           overwrite: true
+      
 
       
       - name: Diagnose EC2 Bootstrap Failure
