@@ -132,43 +132,32 @@ jobs:
           strip_components: 1
           overwrite: true
       
-
-      
-      - name: Diagnose EC2 Bootstrap Failure
-        uses: appleboy/ssh-action@v1
+      - name: Diagnose EC2 and K3s health
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ steps.ec2.outputs.host }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          command_timeout: 3m
+          command_timeout: 2m
           script: |
-            echo "========== CLOUD-INIT STATUS =========="
-            sudo cloud-init status --long || true
+            echo "===== INSTANCE RESOURCES ====="
+            uptime
+            free -h
+            df -h /
+            nproc
       
-            echo "========== SCRIPT FILE TYPE =========="
-            sudo file /var/lib/cloud/instance/scripts/part-001 || true
+            echo "===== TOP PROCESSES BY MEMORY ====="
+            ps aux --sort=-%mem | head -12
       
-            echo "========== FIRST 32 BYTES =========="
-            sudo od -An -tx1 -N32 /var/lib/cloud/instance/scripts/part-001 || true
+            echo "===== K3S SERVICE ====="
+            sudo systemctl status k3s --no-pager -l || true
       
-            echo "========== FIRST LINE WITH HIDDEN CHARACTERS =========="
-            sudo head -n 1 /var/lib/cloud/instance/scripts/part-001 | cat -A || true
+            echo "===== CONTAINER RUNTIME ====="
+            sudo k3s crictl info 2>&1 | head -60 || true
       
-            echo "========== BOOTSTRAP LOG =========="
-            sudo tail -n 150 /var/log/nationalvote-bootstrap.log 2>&1 || true
-      
-            echo "========== CLOUD-INIT OUTPUT =========="
-            sudo tail -n 200 /var/log/cloud-init-output.log 2>&1 || true
-      
-            echo "========== CLOUD-INIT ERROR DETAILS =========="
-            sudo sed -n '830,875p' /var/log/cloud-init.log 2>&1 || true
-      
-            echo "========== INSTALLED COMPONENTS =========="
-            command -v kubectl || true
-            command -v kubeadm || true
-            command -v containerd || true
-    
-          
+            echo "===== RECENT K3S ERRORS ====="
+            sudo journalctl -u k3s -n 60 --no-pager
+
       
       - name: Test Docker on existing EC2
         uses: appleboy/ssh-action@v1
