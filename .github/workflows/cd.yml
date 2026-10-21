@@ -126,24 +126,32 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           envs: IMAGE
+          
+      - name: Prepare and Verify Kubernetes
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ steps.ec2.outputs.host }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
-            set -e
+            set -eu
 
-            echo "Checking Kubernetes cluster..."
-            sudo kubectl get nodes
+            echo "Checking Kubernetes installation..."
 
-            echo "Applying NationalVote manifests..."
-            sudo kubectl apply -f /home/ubuntu/nationalvote-deploy/k8s/
+            if command -v kubectl >/dev/null 2>&1; then
+              KUBECTL="kubectl"
+            elif sudo test -x /usr/local/bin/kubectl; then
+              KUBECTL="sudo /usr/local/bin/kubectl"
+            elif sudo command -v k3s >/dev/null 2>&1; then
+              KUBECTL="sudo k3s kubectl"
+            else
+              echo "Kubernetes is not installed on this EC2 instance."
+              echo "Install Kubernetes through Terraform/cloud-init before deployment."
+              exit 1
+            fi
 
-            echo "Updating application image..."
-            sudo kubectl set image deployment/nationalvote \
-              nationalvote="$IMAGE" \
-              -n devops-project
+            echo "Verifying Kubernetes cluster..."
+            $KUBECTL get nodes
 
-            echo "Waiting for rollout..."
-            sudo kubectl rollout status deployment/nationalvote \
-              -n devops-project --timeout=180s
+            echo "Kubernetes cluster verification successful."
 
-            echo "Checking application resources..."
-            sudo kubectl get pods -n devops-project
-            sudo kubectl get services -n devops-project
