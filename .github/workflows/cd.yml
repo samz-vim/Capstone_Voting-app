@@ -131,6 +131,40 @@ jobs:
           target: "/home/ubuntu/nationalvote-kubernetes/"
           strip_components: 1
           overwrite: true
+
+      
+      - name: Check EC2 resources and K3s
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ steps.ec2.outputs.host }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          command_timeout: 3m
+          script: |
+            echo "===== MEMORY ====="
+            free -h
+      
+            echo "===== DISK ====="
+            df -h /
+      
+            echo "===== CPU LOAD ====="
+            uptime
+            nproc
+      
+            echo "===== MEMORY-HEAVY PROCESSES ====="
+            ps -eo pid,comm,%mem,%cpu --sort=-%mem | head -10
+      
+            echo "===== K3S STATUS ====="
+            sudo systemctl is-active k3s || true
+      
+            echo "===== API HEALTH ====="
+            sudo timeout 15 /usr/local/bin/k3s kubectl \
+              --request-timeout=10s get nodes -o wide || true
+      
+            echo "===== RECENT ERRORS ====="
+            sudo timeout 15 journalctl -u k3s \
+              -p err -n 15 --no-pager || true
+
       
       - name: Diagnose EC2 and K3s health
         uses: appleboy/ssh-action@v1.2.0
