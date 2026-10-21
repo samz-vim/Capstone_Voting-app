@@ -374,30 +374,17 @@ jobs:
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           command_timeout: 4m
           script: |
-            set -eu
-      
-            export KUBECONFIG=/home/ubuntu/.kube/config
+            set -e
             cd /home/ubuntu/nationalvote-kubernetes
-      
+          
             echo "Creating namespace..."
-            kubectl apply -f namespace.yml
-      
+            sudo k3s kubectl apply -f namespace.yml
+          
             echo "Deploying NationalVote..."
-            kubectl apply -f deployment.yml
-            kubectl apply -f service.yml
-      
-            echo "Waiting up to 120 seconds for the application..."
-            if ! kubectl rollout status deployment/nationalvote \
-              -n devops-project --timeout=120s; then
-              echo "ERROR: NationalVote rollout failed."
-              kubectl get pods -n devops-project -o wide || true
-              kubectl describe deployment nationalvote \
-                -n devops-project || true
-              kubectl get events -n devops-project \
-                --sort-by=.metadata.creationTimestamp || true
-              exit 1
-            fi
-      
-            echo "Deployment successful."
-            kubectl get pods,deployments,services \
-              -n devops-project
+            sudo k3s kubectl apply -f deployment.yml
+          
+            echo "Creating service..."
+            sudo k3s kubectl apply -f service.yml
+          
+            echo "Checking resources..."
+            sudo k3s kubectl get all -n voting-app
