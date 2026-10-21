@@ -175,24 +175,25 @@ jobs:
 
 
       
-      - name: Deploy to EC2
+      - name: Check Docker on EC2
         uses: appleboy/ssh-action@v1
         with:
-            host: ${{ steps.ec2.outputs.host }}
-            username: ubuntu
-            key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-            script: |
-              set -eu
-  
-              echo "Checking Kubernetes bootstrap..."
-              if ! sudo test -f /var/lib/nationalvote-bootstrap-complete; then
-                echo "Kubernetes bootstrap is not complete."
-                exit 1
-              fi
-  
-              export KUBECONFIG=/home/ubuntu/.kube/config
-              kubectl get nodes
-            
+          host: ${{ steps.ec2.outputs.host }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          command_timeout: 1m
+          script: |
+            set -eu
+      
+            if ! command -v docker >/dev/null 2>&1; then
+              sudo apt-get update
+              sudo apt-get install -y docker.io
+            fi
+      
+            sudo systemctl enable --now docker
+            sudo docker --version
+            sudo docker run --rm hello-world
+                
       - name: Prepare and Verify Kubernetes
         uses: appleboy/ssh-action@v1
         with:
