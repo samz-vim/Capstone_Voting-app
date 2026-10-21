@@ -65,7 +65,7 @@ jobs:
             echo "EC2 instance ID or public IP is missing."
             exit 1
           fi
-
+          
           echo "instance_id=$INSTANCE_ID" >> "$GITHUB_OUTPUT"
           echo "host=$PUBLIC_IP" >> "$GITHUB_OUTPUT"
           echo "EC2 connection details retrieved."
