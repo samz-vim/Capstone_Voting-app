@@ -114,7 +114,7 @@ jobs:
           set -euo pipefail
           pwd
           ls -la
-          ls -la kubernetes/
+          ls -la k8s/
           test -f k8s/namespace.yaml
           test -f k8s/deployment.yaml
           test -f k8s/service.yaml
@@ -127,7 +127,7 @@ jobs:
           host: ${{ steps.ec2.outputs.host }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          source: "kubernetes/*.yaml"
+          source: "k8s/*.yaml"
           target: "/home/ubuntu/nationalvote-kubernetes/"
           strip_components: 1
           overwrite: true
