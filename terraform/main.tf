@@ -69,3 +69,15 @@ resource "aws_eip_association" "nationalvote" {
   allocation_id = aws_eip.nationalvote.id
 }
 
+user_data = <<-EOF
+  #!/bin/bash
+  set -eux
+
+  apt-get update
+  apt-get install -y curl
+
+  curl -sfL https://get.k3s.io | sh -
+
+  systemctl enable k3s
+  systemctl start k3s
+EOF
