@@ -153,57 +153,26 @@ jobs:
             command -v containerd || true
     
           
-      - name: Wait for Kubernetes Bootstrap and Diagnose Failures
+      
+      - name: Test Docker on existing EC2
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ steps.ec2.outputs.host }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          command_timeout: 20m
+          command_timeout: 10m
           script: |
             set -eu
+      
+            if ! command -v docker >/dev/null 2>&1; then
+              sudo apt-get update
+              sudo apt-get install -y docker.io
+            fi
+      
+            sudo systemctl enable --now docker
+            sudo docker --version
+            sudo docker run --rm hello-world
 
-            MARKER="/var/lib/nationalvote-bootstrap-complete"
-            LOG="/var/log/nationalvote-bootstrap.log"
-
-            echo "Waiting for EC2 bootstrap to complete..."
-
-            for attempt in $(seq 1 120); do
-              if sudo test -f "$MARKER"; then
-                echo "Bootstrap completed successfully."
-                break
-              fi
-
-              if [ "$attempt" -eq 120 ]; then
-                echo "ERROR: Bootstrap did not complete within 20 minutes."
-                echo "========== BOOTSTRAP LOG =========="
-                sudo tail -n 150 "$LOG" 2>/dev/null || true
-
-                echo "========== CLOUD-INIT STATUS =========="
-                sudo cloud-init status --long 2>&1 || true
-
-                echo "========== CLOUD-INIT OUTPUT =========="
-                sudo tail -n 100 /var/log/cloud-init-output.log 2>/dev/null || true
-
-                echo "========== KUBERNETES SERVICES =========="
-                sudo systemctl --no-pager --full status containerd kubelet 2>&1 || true
-
-                exit 1
-              fi
-
-              sleep 10
-            done
-
-            export KUBECONFIG=/home/ubuntu/.kube/config
-
-            echo "Checking Kubernetes nodes..."
-            kubectl wait --for=condition=Ready nodes --all --timeout=300s
-
-            echo "Checking cluster pods..."
-            kubectl get nodes
-            kubectl get pods -A
-
-            echo "Kubernetes cluster is ready."
 
       
       - name: Deploy to EC2
