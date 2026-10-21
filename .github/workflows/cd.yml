@@ -133,25 +133,47 @@ jobs:
           host: ${{ steps.ec2.outputs.host }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+
           script: |
             set -eu
 
-            echo "Checking Kubernetes installation..."
+            echo "Waiting for NationalVote bootstrap to finish..."
 
-            if command -v kubectl >/dev/null 2>&1; then
-              KUBECTL="kubectl"
-            elif sudo test -x /usr/local/bin/kubectl; then
-              KUBECTL="sudo /usr/local/bin/kubectl"
-            elif sudo command -v k3s >/dev/null 2>&1; then
-              KUBECTL="sudo k3s kubectl"
-            else
-              echo "Kubernetes is not installed on this EC2 instance."
-              echo "Install Kubernetes through Terraform/cloud-init before deployment."
+            ATTEMPTS=120
+            COUNT=0
+
+            while ! sudo test -f /var/lib/nationalvote-bootstrap-complete; do
+              COUNT=$((COUNT + 1))
+
+              if [ "$COUNT" -ge "$ATTEMPTS" ]; then
+                echo "ERROR: Kubernetes bootstrap did not complete."
+                echo "Bootstrap log:"
+                sudo tail -n 100 /var/log/nationalvote-bootstrap.log || true
+                exit 1
+              fi
+
+              sleep 10
+            done
+
+            echo "Bootstrap completed successfully."
+
+            export KUBECONFIG=/home/ubuntu/.kube/config
+
+            if ! command -v kubectl >/dev/null 2>&1; then
+              echo "ERROR: kubectl is not installed or not in PATH."
               exit 1
             fi
 
-            echo "Verifying Kubernetes cluster..."
-            $KUBECTL get nodes
+            echo "Checking Kubernetes node readiness..."
+            kubectl wait \
+              --for=condition=Ready \
+              nodes --all \
+              --timeout=300s
 
-            echo "Kubernetes cluster verification successful."
+            echo "Checking Kubernetes cluster..."
+            kubectl get nodes
+            kubectl get pods -A
+
+            echo "Kubernetes cluster is ready for deployment."
+
 
