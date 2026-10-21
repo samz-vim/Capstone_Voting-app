@@ -380,11 +380,11 @@ jobs:
             cd /home/ubuntu/nationalvote-kubernetes
       
             echo "Creating namespace..."
-            kubectl apply -f namespace.yaml
+            kubectl apply -f namespace.yml
       
             echo "Deploying NationalVote..."
-            kubectl apply -f deployment.yaml
-            kubectl apply -f service.yaml
+            kubectl apply -f deployment.yml
+            kubectl apply -f service.yml
       
             echo "Waiting up to 120 seconds for the application..."
             if ! kubectl rollout status deployment/nationalvote \
