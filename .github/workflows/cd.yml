@@ -124,33 +124,35 @@ jobs:
           host: ${{ steps.ec2.outputs.host }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          command_timeout: 2m
+          command_timeout: 3m
           script: |
             echo "========== CLOUD-INIT STATUS =========="
             sudo cloud-init status --long || true
-
-            echo "========== CLOUD-INIT ERROR LOG =========="
-            sudo grep -n -i -E \
-              'error|failed|traceback|exception|scripts_user' \
-              /var/log/cloud-init.log | tail -n 100 || true
-
-            echo "========== CLOUD-INIT OUTPUT =========="
-            sudo tail -n 150 /var/log/cloud-init-output.log || true
-
-            echo "========== ACTUAL BOOTSTRAP SCRIPT =========="
-            sudo ls -l /var/lib/cloud/instance/scripts/ || true
-            sudo sed -n '1,260p' \
-              /var/lib/cloud/instance/scripts/part-001 || true
-
+      
+            echo "========== SCRIPT FILE TYPE =========="
+            sudo file /var/lib/cloud/instance/scripts/part-001 || true
+      
+            echo "========== FIRST 32 BYTES =========="
+            sudo od -An -tx1 -N32 /var/lib/cloud/instance/scripts/part-001 || true
+      
+            echo "========== FIRST LINE WITH HIDDEN CHARACTERS =========="
+            sudo head -n 1 /var/lib/cloud/instance/scripts/part-001 | cat -A || true
+      
             echo "========== BOOTSTRAP LOG =========="
-            sudo cat /var/log/nationalvote-bootstrap.log || true
-
+            sudo tail -n 150 /var/log/nationalvote-bootstrap.log 2>&1 || true
+      
+            echo "========== CLOUD-INIT OUTPUT =========="
+            sudo tail -n 200 /var/log/cloud-init-output.log 2>&1 || true
+      
+            echo "========== CLOUD-INIT ERROR DETAILS =========="
+            sudo sed -n '830,875p' /var/log/cloud-init.log 2>&1 || true
+      
             echo "========== INSTALLED COMPONENTS =========="
             command -v kubectl || true
             command -v kubeadm || true
             command -v containerd || true
-
-      
+    
+          
       - name: Wait for Kubernetes Bootstrap and Diagnose Failures
         uses: appleboy/ssh-action@v1
         with:
