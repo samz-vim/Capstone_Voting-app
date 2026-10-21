@@ -194,53 +194,38 @@ jobs:
             sudo docker --version
             sudo docker run --rm hello-world
                 
-      - name: Prepare and Verify Kubernetes
+      
+      - name: Wait for EC2 Docker Setup
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ steps.ec2.outputs.host }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-
+          command_timeout: 10m
           script: |
             set -eu
-
-            echo "Waiting for NationalVote bootstrap to finish..."
-
-            ATTEMPTS=5
-            COUNT=0
-
-            while ! sudo test -f /var/lib/nationalvote-bootstrap-complete; do
-              COUNT=$((COUNT + 1))
-
-              if [ "$COUNT" -ge "$ATTEMPTS" ]; then
-                echo "ERROR: Kubernetes bootstrap did not complete."
-                echo "Bootstrap log:"
+      
+            echo "Checking EC2 Docker setup..."
+      
+            for i in $(seq 1 60); do
+              if sudo test -f /var/lib/nationalvote-bootstrap-complete; then
+                break
+              fi
+      
+              if [ "$i" -eq 60 ]; then
+                echo "ERROR: Docker bootstrap did not complete."
                 sudo tail -n 100 /var/log/nationalvote-bootstrap.log || true
                 exit 1
               fi
-
-              sleep 10
+      
+              sleep 5
             done
-
-            echo "Bootstrap completed successfully."
-
-            export KUBECONFIG=/home/ubuntu/.kube/config
-
-            if ! command -v kubectl >/dev/null 2>&1; then
-              echo "ERROR: kubectl is not installed or not in PATH."
-              exit 1
-            fi
-
-            echo "Checking Kubernetes node readiness..."
-            kubectl wait \
-              --for=condition=Ready \
-              nodes --all \
-              --timeout=30s
-
-            echo "Checking Kubernetes cluster..."
-            kubectl get nodes
-            kubectl get pods -A
-
-            echo "Kubernetes cluster is ready for deployment."
-
-
+      
+            echo "Checking Docker..."
+            sudo systemctl is-active docker
+            sudo docker --version
+      
+            echo "EC2 Docker setup is ready."
+      
+      
+      
