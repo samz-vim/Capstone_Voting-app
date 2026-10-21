@@ -14,11 +14,12 @@ date
 
 # 1. Prepare Ubuntu and install containerd.
 apt-get update
-apt-get install -y 
-  ca-certificates 
-  curl 
-  gpg 
-  apt-transport-https 
+
+apt-get install -y \
+  ca-certificates \
+  curl \
+  gpg \
+  apt-transport-https \
   containerd
 
 swapoff -a
