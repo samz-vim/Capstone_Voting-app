@@ -118,6 +118,39 @@ jobs:
           overwrite: true
 
       
+      - name: Diagnose EC2 Bootstrap Failure
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ steps.ec2.outputs.host }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          command_timeout: 2m
+          script: |
+            echo "========== CLOUD-INIT STATUS =========="
+            sudo cloud-init status --long || true
+
+            echo "========== CLOUD-INIT ERROR LOG =========="
+            sudo grep -n -i -E \
+              'error|failed|traceback|exception|scripts_user' \
+              /var/log/cloud-init.log | tail -n 100 || true
+
+            echo "========== CLOUD-INIT OUTPUT =========="
+            sudo tail -n 150 /var/log/cloud-init-output.log || true
+
+            echo "========== ACTUAL BOOTSTRAP SCRIPT =========="
+            sudo ls -l /var/lib/cloud/instance/scripts/ || true
+            sudo sed -n '1,260p' \
+              /var/lib/cloud/instance/scripts/part-001 || true
+
+            echo "========== BOOTSTRAP LOG =========="
+            sudo cat /var/log/nationalvote-bootstrap.log || true
+
+            echo "========== INSTALLED COMPONENTS =========="
+            command -v kubectl || true
+            command -v kubeadm || true
+            command -v containerd || true
+
+      
       - name: Wait for Kubernetes Bootstrap and Diagnose Failures
         uses: appleboy/ssh-action@v1
         with:
