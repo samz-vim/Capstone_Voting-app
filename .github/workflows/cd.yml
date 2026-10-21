@@ -115,9 +115,9 @@ jobs:
           pwd
           ls -la
           ls -la k8s/
-          test -f k8s/namespace.yaml
-          test -f k8s/deployment.yaml
-          test -f k8s/service.yaml
+          test -f k8s/namespace.yml
+          test -f k8s/deployment.yml
+          test -f k8s/service.yml
       
           echo "All Kubernetes manifests exist."
       
@@ -127,7 +127,7 @@ jobs:
           host: ${{ steps.ec2.outputs.host }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          source: "k8s/*.yaml"
+          source: "k8s/*.yml"
           target: "/home/ubuntu/nationalvote-kubernetes/"
           strip_components: 1
           overwrite: true
