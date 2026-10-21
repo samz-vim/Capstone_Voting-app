@@ -193,7 +193,67 @@ jobs:
             sudo systemctl enable --now docker
             sudo docker --version
             sudo docker run --rm hello-world
-                
+      
+      - name: Install or Repair K3s
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ steps.ec2.outputs.host }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          command_timeout: 8m
+          script: |
+            set -eu
+      
+            echo "Checking whether K3s is already installed..."
+      
+            if sudo systemctl is-active --quiet k3s; then
+              echo "K3s is already running."
+            else
+              echo "K3s is missing or stopped. Checking package manager..."
+      
+              if ! sudo timeout 60 apt-get \
+                -o DPkg::Lock::Timeout=45 update; then
+                echo "ERROR: apt is locked or package update failed."
+                ps aux | grep -E '[a]pt-get|[d]pkg' || true
+                exit 1
+              fi
+      
+              sudo timeout 90 apt-get \
+                -o DPkg::Lock::Timeout=60 install -y curl ca-certificates
+      
+              echo "Installing lightweight Kubernetes..."
+              curl -fsSL https://get.k3s.io -o /tmp/install-k3s.sh
+              sudo env INSTALL_K3S_CHANNEL=stable sh /tmp/install-k3s.sh
+      
+              echo "Checking K3s service..."
+              if ! sudo systemctl is-active --quiet k3s; then
+                sudo systemctl status k3s --no-pager || true
+                sudo journalctl -u k3s -n 60 --no-pager || true
+                exit 1
+              fi
+            fi
+      
+            echo "Configuring kubectl..."
+            sudo install -d -o ubuntu -g ubuntu -m 700 /home/ubuntu/.kube
+            sudo install -o ubuntu -g ubuntu -m 600 \
+              /etc/rancher/k3s/k3s.yaml \
+              /home/ubuntu/.kube/config
+      
+            export KUBECONFIG=/home/ubuntu/.kube/config
+      
+            echo "Waiting up to 90 seconds for Kubernetes..."
+            if ! sudo k3s kubectl wait \
+              --for=condition=Ready nodes --all --timeout=75s; then
+              sudo journalctl -u k3s -n 80 --no-pager || true
+              exit 1
+            fi
+      
+            sudo touch /var/lib/nationalvote-bootstrap-complete
+            sudo chown ubuntu:ubuntu /home/ubuntu/.kube/config
+      
+            kubectl get nodes
+            echo "SUCCESS: K3s is ready."
+         
       - name: Preflight - Check Kubernetes health
         uses: appleboy/ssh-action@v1
         with:
