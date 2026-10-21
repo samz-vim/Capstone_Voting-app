@@ -341,16 +341,30 @@ jobs:
             echo "SUCCESS: Kubernetes is ready for deployment."
             kubectl get nodes
 
+      
+      - name: Debug and verify Kubernetes files
+        shell: bash
+        run: |
+          set -euxo pipefail
+          echo "Repository root:"
+          pwd
+          echo "Kubernetes files:"
+          find . -maxdepth 4 -type f \( -iname '*.yml' -o -iname '*.yaml' \) | sort
+          test -f k8s/namespace.yml
+          test -f k8s/deployment.yml
+          test -f k8s/service.yml
+      
       - name: Copy Kubernetes manifests to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ steps.ec2.outputs.host }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          source: "kubernetes/*.yaml"
+          source: "k8s/namespace.yml,k8s/deployment.yml,k8s/service.yml"
           target: "/home/ubuntu/nationalvote-kubernetes/"
           strip_components: 1
           overwrite: true
+
            
       - name: Deploy NationalVote to Kubernetes
         uses: appleboy/ssh-action@v1
