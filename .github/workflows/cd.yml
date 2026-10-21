@@ -194,38 +194,94 @@ jobs:
             sudo docker --version
             sudo docker run --rm hello-world
                 
-      
-      - name: Wait for EC2 Docker Setup
+      - name: Preflight - Check Kubernetes health
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ steps.ec2.outputs.host }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          command_timeout: 10m
+          command_timeout: 2m
           script: |
             set -eu
       
-            echo "Checking EC2 Docker setup..."
+            echo "Checking K3s service..."
       
-            for i in $(seq 1 60); do
-              if sudo test -f /var/lib/nationalvote-bootstrap-complete; then
-                break
-              fi
+            if ! sudo systemctl is-active --quiet k3s; then
+              echo "ERROR: K3s is not running. Stopping early."
+              sudo systemctl status k3s --no-pager || true
+              sudo journalctl -u k3s -n 60 --no-pager || true
+              sudo tail -n 60 /var/log/nationalvote-bootstrap.log || true
+              exit 1
+            fi
       
-              if [ "$i" -eq 60 ]; then
-                echo "ERROR: Docker bootstrap did not complete."
-                sudo tail -n 100 /var/log/nationalvote-bootstrap.log || true
-                exit 1
-              fi
+            echo "Checking Kubernetes configuration..."
       
-              sleep 5
-            done
+            if [ ! -r /home/ubuntu/.kube/config ]; then
+              echo "ERROR: Kubernetes config is missing."
+              sudo tail -n 60 /var/log/nationalvote-bootstrap.log || true
+              exit 1
+            fi
       
-            echo "Checking Docker..."
-            sudo systemctl is-active docker
-            sudo docker --version
+            export KUBECONFIG=/home/ubuntu/.kube/config
       
-            echo "EC2 Docker setup is ready."
+            echo "Checking node readiness (maximum 60 seconds)..."
       
+            if ! kubectl wait \
+              --for=condition=Ready nodes --all \
+              --timeout=60s; then
+              echo "ERROR: Kubernetes node is not Ready."
+              kubectl get nodes -o wide || true
+              kubectl get pods -A || true
+              sudo journalctl -u k3s -n 60 --no-pager || true
+              exit 1
+            fi
       
+            echo "SUCCESS: Kubernetes is ready for deployment."
+            kubectl get nodes
+
+      - name: Copy Kubernetes manifests to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ steps.ec2.outputs.host }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          source: "kubernetes/*.yaml"
+          target: "/home/ubuntu/nationalvote-kubernetes/"
+          strip_components: 1
+          overwrite: true
+           
+      - name: Deploy NationalVote to Kubernetes
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ steps.ec2.outputs.host }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          command_timeout: 4m
+          script: |
+            set -eu
       
+            export KUBECONFIG=/home/ubuntu/.kube/config
+            cd /home/ubuntu/nationalvote-kubernetes
+      
+            echo "Creating namespace..."
+            kubectl apply -f namespace.yaml
+      
+            echo "Deploying NationalVote..."
+            kubectl apply -f deployment.yaml
+            kubectl apply -f service.yaml
+      
+            echo "Waiting up to 120 seconds for the application..."
+            if ! kubectl rollout status deployment/nationalvote \
+              -n devops-project --timeout=120s; then
+              echo "ERROR: NationalVote rollout failed."
+              kubectl get pods -n devops-project -o wide || true
+              kubectl describe deployment nationalvote \
+                -n devops-project || true
+              kubectl get events -n devops-project \
+                --sort-by=.metadata.creationTimestamp || true
+              exit 1
+            fi
+      
+            echo "Deployment successful."
+            kubectl get pods,deployments,services \
+              -n devops-project
