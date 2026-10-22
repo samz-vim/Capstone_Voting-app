@@ -1,6 +1,5 @@
 name: CD
 
-
 on:
   repository_dispatch:
     types: [terraform-complete]
