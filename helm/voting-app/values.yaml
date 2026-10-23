@@ -9,7 +9,7 @@ image:
 database:
   name: nationalvote
   user: nationalvote
-  password: Tobiloba@2005
+  password: tobiloba12345
 
 
 service:
