@@ -22,7 +22,7 @@ def create_app(test_config=None):
     app.config.update(
         SQLALCHEMY_DATABASE_URI=os.getenv(
             "DATABASE_URL",
-            "postgresql+psycopg://voting:voting_dev_password@localhost:5432/voting",
+            "postgresql+psycopg://nationalvote:tobiloba12345@localhost:5432/nationalvote",
         ),
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         JSON_SORT_KEYS=False,
