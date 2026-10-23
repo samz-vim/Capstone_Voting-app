@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: voting-app
-  labels:
-    app.kubernetes.io/name: voting-app
+  name: nationalvote-service
+  namespace: {{ .Values.namespace }}
 spec:
   type: {{ .Values.service.type }}
   selector:
-    app.kubernetes.io/name: voting-app
+    app: nationalvote
   ports:
     - name: http
       port: {{ .Values.service.port }}
       targetPort: {{ .Values.service.targetPort }}
+      nodePort: {{ .Values.service.nodePort }}
