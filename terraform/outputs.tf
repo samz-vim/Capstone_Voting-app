@@ -9,6 +9,12 @@ output "instance_public_ip" {
 }
 
 
+output "ec2_public_ip" {
+  description = "Public IPv4 address of the application EC2 instance"
+  value       = aws_instance.app_server.public_ip
+}
+
+
 output "elastic_ip" {
   description = "Static public IP for NationalVote EC2"
   value       = aws_eip.nationalvote.public_ip
