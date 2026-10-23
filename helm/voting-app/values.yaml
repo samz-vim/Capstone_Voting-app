@@ -5,6 +5,13 @@ image:
   tag: latest
   pullPolicy: Always
 
+
+database:
+  name: nationalvote
+  user: nationalvote
+  password: CHANGE_ME_TO_A_STRONG_PASSWORD
+
+
 service:
   type: NodePort
   port: 5000
