@@ -363,6 +363,18 @@ jobs:
           target: "/home/ubuntu/nationalvote-kubernetes/"
           strip_components: 1
           overwrite: true
+
+      
+      - name: Check EC2 host configuration
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          if [ -z "$EC2_HOST" ]; then
+            echo "::error::EC2_HOST is empty or the secret is unavailable."
+            exit 1
+          fi
+          echo "EC2_HOST is configured."
+
       
       - name: Copy Helm chart to EC2
         uses: appleboy/scp-action@v0.1.7
