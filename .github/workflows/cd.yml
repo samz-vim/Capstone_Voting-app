@@ -353,6 +353,23 @@ jobs:
           test -f k8s/deployment.yml
           test -f k8s/service.yml
       
+      - name: Capture EC2 public IP from Terraform
+        id: tf_outputs
+        working-directory: ./terraform
+        shell: bash
+        run: |
+          set -euo pipefail
+          EC2_IP=$(terraform output -raw ec2_public_ip)
+          if [ -z "$EC2_IP" ]; then
+            echo "::error::Terraform returned an empty EC2 public IP"
+            exit 1
+          fi
+          echo "ec2_host=$EC2_IP" >> "$GITHUB_OUTPUT"
+          echo "Successfully captured the EC2 public IP."
+
+          
+
+
       - name: Copy Kubernetes manifests to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -376,10 +393,11 @@ jobs:
           echo "EC2_HOST is configured."
 
       
+            
       - name: Copy Helm chart to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.EC2_HOST }}
+          host: ${{ steps.tf_outputs.outputs.ec2_host }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
@@ -387,6 +405,7 @@ jobs:
           target: "/home/ubuntu/nationalvote-helm/"
           strip_components: 1
           overwrite: true
+
           
       - name: Deploy NationalVote to Kubernetes
         uses: appleboy/ssh-action@v1
