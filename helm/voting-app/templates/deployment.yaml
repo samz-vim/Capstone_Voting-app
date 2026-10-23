@@ -20,7 +20,7 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           env:
           - name: DATABASE_URL
-            value: "postgresql+psycopg://nationalvote:YOUR_PASSWORD_HERE@voting-postgres:5432/nationalvote"
+            value: "postgresql+psycopg://nationalvote:tobiloba12345@voting-postgres:5432/nationalvote"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
