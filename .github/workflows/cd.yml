@@ -353,6 +353,20 @@ jobs:
           test -f k8s/deployment.yml
           test -f k8s/service.yml
       
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.16.2"
+      
+      - name: Terraform Init
+        working-directory: ./terraform
+        run: terraform init
+      
+      - name: Terraform Apply
+        working-directory: ./terraform
+        run: terraform apply -auto-approve
+      
       - name: Capture EC2 public IP from Terraform
         id: tf_outputs
         working-directory: ./terraform
@@ -367,7 +381,6 @@ jobs:
           echo "ec2_host=$EC2_IP" >> "$GITHUB_OUTPUT"
           echo "Successfully captured the EC2 public IP."
 
-          
 
 
       - name: Copy Kubernetes manifests to EC2
