@@ -397,3 +397,64 @@ jobs:
           
             echo "Checking resources..."
             sudo k3s kubectl get all -n voting-app
+            
+      - name: Deploy NationalVote using Helm
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: IMAGE_TAG,DOCKERHUB_USERNAME
+          script: |
+            set -eu
+
+            echo "Installing Helm if required..."
+            if ! command -v helm >/dev/null 2>&1; then
+              curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 \
+                -o /tmp/get_helm.sh
+              sudo bash /tmp/get_helm.sh
+            fi
+
+            helm version
+
+            cd /home/ubuntu/nationalvote-helm
+
+            echo "Validating chart..."
+            helm lint .
+
+            echo "Checking K3s..."
+            sudo k3s kubectl get nodes
+
+            echo "Preparing first Helm installation..."
+            if ! sudo env KUBECONFIG=/etc/rancher/k3s/k3s.yaml \
+              helm status nationalvote -n voting-app >/dev/null 2>&1; then
+              sudo k3s kubectl delete deployment nationalvote \
+                -n voting-app --ignore-not-found
+              sudo k3s kubectl delete service nationalvote-service \
+                -n voting-app --ignore-not-found
+            fi
+
+            echo "Deploying image ${DOCKERHUB_USERNAME}/nationalvote:${IMAGE_TAG}"
+
+            sudo env KUBECONFIG=/etc/rancher/k3s/k3s.yaml \
+              helm upgrade --install nationalvote . \
+              --namespace voting-app \
+              --create-namespace \
+              --set image.repository="${DOCKERHUB_USERNAME}/nationalvote" \
+              --set-string image.tag="${IMAGE_TAG}" \
+              --wait \
+              --timeout 180s
+
+            echo "Checking Helm release..."
+            sudo env KUBECONFIG=/etc/rancher/k3s/k3s.yaml \
+              helm status nationalvote -n voting-app
+
+            echo "Checking application..."
+            sudo k3s kubectl rollout status deployment/nationalvote \
+              -n voting-app --timeout=180s
+
+            sudo k3s kubectl get pods -n voting-app
+            sudo k3s kubectl get services -n voting-app
