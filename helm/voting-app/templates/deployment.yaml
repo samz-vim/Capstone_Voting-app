@@ -1,45 +1,31 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: voting-app
+  name: nationalvote
+  namespace: {{ .Values.namespace }}
   labels:
-    app.kubernetes.io/name: voting-app
+    app: nationalvote
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: voting-app
+      app: nationalvote
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: voting-app
+        app: nationalvote
     spec:
-      securityContext:
-        runAsNonRoot: {{ .Values.podSecurityContext.runAsNonRoot }}
-        runAsUser: {{ .Values.podSecurityContext.runAsUser }}
-        runAsGroup: {{ .Values.podSecurityContext.runAsGroup }}
-        fsGroup: {{ .Values.podSecurityContext.fsGroup }}
       containers:
-        - name: voting-app
+        - name: nationalvote
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
               containerPort: 5000
-          env:
-            - name: DATABASE_URL
-              value: "postgresql+psycopg://{{ .Values.database.user }}:{{ .Values.database.password }}@{{ .Values.database.host }}:5432/{{ .Values.database.name }}"
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: http
-            initialDelaySeconds: 10
-            periodSeconds: 10
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: http
-            initialDelaySeconds: 20
-            periodSeconds: 20
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
