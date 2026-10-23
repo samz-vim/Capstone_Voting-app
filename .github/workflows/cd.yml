@@ -354,35 +354,6 @@ jobs:
           test -f k8s/service.yml
       
 
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.16.2"
-      
-      - name: Terraform Init
-        working-directory: ./terraform
-        run: terraform init
-      
-      - name: Terraform Apply
-        working-directory: ./terraform
-        run: terraform apply -auto-approve
-      
-      - name: Capture EC2 public IP from Terraform
-        id: tf_outputs
-        working-directory: ./terraform
-        shell: bash
-        run: |
-          set -euo pipefail
-          EC2_IP=$(terraform output -raw ec2_public_ip)
-          if [ -z "$EC2_IP" ]; then
-            echo "::error::Terraform returned an empty EC2 public IP"
-            exit 1
-          fi
-          echo "ec2_host=$EC2_IP" >> "$GITHUB_OUTPUT"
-          echo "Successfully captured the EC2 public IP."
-
-
-
       - name: Copy Kubernetes manifests to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -394,25 +365,13 @@ jobs:
           strip_components: 1
           overwrite: true
 
-      
-      - name: Check EC2 host configuration
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-        run: |
-          if [ -z "$EC2_HOST" ]; then
-            echo "::error::EC2_HOST is empty or the secret is unavailable."
-            exit 1
-          fi
-          echo "EC2_HOST is configured."
-
-      
             
       - name: Copy Helm chart to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ steps.tf_outputs.outputs.ec2_host }}
+          host: ${{ steps.ec2.outputs.host }}
           username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           port: 22
           source: "helm/Chart.yaml,helm/values.yaml,helm/templates/deployment.yaml,helm/templates/service.yaml"
           target: "/home/ubuntu/nationalvote-helm/"
@@ -443,47 +402,31 @@ jobs:
             echo "Checking resources..."
             sudo k3s kubectl get all -n voting-app
             
+     
       - name: Deploy NationalVote using Helm
         uses: appleboy/ssh-action@v1.2.0
         env:
           IMAGE_TAG: ${{ github.sha }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         with:
-          host: ${{ secrets.EC2_HOST }}
+          host: ${{ steps.ec2.outputs.host }}
           username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          port: 22
           envs: IMAGE_TAG,DOCKERHUB_USERNAME
           script: |
             set -eu
-
-            echo "Installing Helm if required..."
+      
             if ! command -v helm >/dev/null 2>&1; then
               curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 \
                 -o /tmp/get_helm.sh
               sudo bash /tmp/get_helm.sh
             fi
-
+      
             helm version
-
             cd /home/ubuntu/nationalvote-helm
-
-            echo "Validating chart..."
             helm lint .
-
-            echo "Checking K3s..."
-            sudo k3s kubectl get nodes
-
-            echo "Preparing first Helm installation..."
-            if ! sudo env KUBECONFIG=/etc/rancher/k3s/k3s.yaml \
-              helm status nationalvote -n voting-app >/dev/null 2>&1; then
-              sudo k3s kubectl delete deployment nationalvote \
-                -n voting-app --ignore-not-found
-              sudo k3s kubectl delete service nationalvote-service \
-                -n voting-app --ignore-not-found
-            fi
-
-            echo "Deploying image ${DOCKERHUB_USERNAME}/nationalvote:${IMAGE_TAG}"
-
+      
             sudo env KUBECONFIG=/etc/rancher/k3s/k3s.yaml \
               helm upgrade --install nationalvote . \
               --namespace voting-app \
@@ -492,14 +435,12 @@ jobs:
               --set-string image.tag="${IMAGE_TAG}" \
               --wait \
               --timeout 180s
-
-            echo "Checking Helm release..."
-            sudo env KUBECONFIG=/etc/rancher/k3s/k3s.yaml \
-              helm status nationalvote -n voting-app
-
-            echo "Checking application..."
+      
             sudo k3s kubectl rollout status deployment/nationalvote \
               -n voting-app --timeout=180s
-
+      
             sudo k3s kubectl get pods -n voting-app
             sudo k3s kubectl get services -n voting-app
+      
+                  sudo k3s kubectl get pods -n voting-app
+                  sudo k3s kubectl get services -n voting-app
