@@ -353,7 +353,19 @@ jobs:
           test -f k8s/deployment.yml
           test -f k8s/service.yml
       
+      
+      - name: Verify Helm chart files
+        shell: bash
+        run: |
+          set -eu
+          pwd
+          find helm -maxdepth 3 -type f -print
+          test -f helm/Chart.yaml
+          test -f helm/values.yaml
+          test -f helm/templates/deployment.yaml
+          test -f helm/templates/service.yaml
 
+      
       - name: Copy Kubernetes manifests to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
